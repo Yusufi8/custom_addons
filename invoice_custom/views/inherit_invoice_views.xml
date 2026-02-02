@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_move_form_confirmed_by" model="ir.ui.view">
+        <field name="name">account.move.form.confirmed.by</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Insert Confirmed Date near Customer -->
+            <xpath expr="//group[@id='header_left_group']" position="inside">
+                <field name="confirmed_by"
+                       invisible="state != 'posted'"
+                       readonly="0"
+                       required="move_type == 'out_invoice'"/>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

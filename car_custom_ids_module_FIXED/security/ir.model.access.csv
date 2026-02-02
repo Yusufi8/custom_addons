@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_stock_operation_customids,access_stock_operation_customids,model_stock_operation_customids,base.group_user,1,1,1,1
+access_stock_operation_customids_line,access_stock_operation_customids_line,model_stock_operation_customids_line,base.group_user,1,1,1,1
+access_purchase_order,access_purchase_order,model_purchase_order,purchase.group_purchase_user,1,1,1,1
+access_product_template_car,product.template.car,model_product_template,base.group_user,1,1,1,1
+access_stock_lot_car,stock.lot.car,model_stock_lot,stock.group_stock_user,1,1,1,1

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_order_form_inherit_customids" model="ir.ui.view">
+        <field name="name">purchase.order.form.inherit.customids</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_receive_customs_id"
+                        string="Receive Customs ID"
+                        type="object"
+                        class="btn-primary"
+                        required="show_custom_ids_button"
+                        invisible="not show_custom_ids_button"/>
+                <field name="customids_status"/>
+            </xpath>
+            <xpath expr="//sheet" position="inside">
+                <notebook position="inside">
+                    <page string="Custom IDs">
+                        <field name="customids_ids" context="{'default_operation_type': 'po'}"/>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+</odoo>
