@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================= -->
+    <!-- My Time Off (Employee) -->
+    <!-- ============================= -->
+    <template id="portal_home_timeoff"
+              inherit_id="portal.portal_my_home"
+              priority="100">
+
+        <xpath expr="//div[@id='portal_vendor_category']"
+               position="inside">
+
+            <div class="o_portal_index_card col-md-6 order-1">
+                <a href="/my/timeoff"
+                   class="d-flex gap-2 gap-md-3 py-3 pe-2 px-md-3 h-100 rounded text-decoration-none bg-100">
+
+                    <!-- Icon -->
+                    <div class="o_portal_icon d-block align-self-start">
+                        <i class="fa fa-calendar fa-2x text-primary"/>
+                    </div>
+
+                    <!-- Text -->
+                    <div>
+                        <div class="mt-0 mb-1 fs-5 fw-normal lh-1">
+                            My Time Off
+                        </div>
+                        <div class="opacity-75">
+                            View and request time off
+                        </div>
+                    </div>
+
+                </a>
+            </div>
+
+        </xpath>
+    </template>
+
+    <!-- ============================= -->
+    <!-- Time Off Approvals (Manager) -->
+    <!-- ============================= -->
+    <template id="portal_home_timeoff_approvals"
+              inherit_id="portal.portal_my_home"
+              priority="110">
+
+        <xpath expr="//div[@id='portal_vendor_category']"
+               position="inside">
+
+            <!-- Only show for HR managers or managers -->
+            <t t-if="request.env.user.has_group('hr.group_hr_manager')">
+
+                <div class="o_portal_index_card col-md-6 order-2">
+                    <a href="/my/timeoff/approvals"
+                       class="d-flex gap-2 gap-md-3 py-3 pe-2 px-md-3 h-100 rounded text-decoration-none bg-100">
+
+                        <!-- Icon -->
+                        <div class="o_portal_icon d-block align-self-start">
+                            <i class="fa fa-check-square fa-2x text-primary"/>
+                        </div>
+
+                        <!-- Text -->
+                        <div>
+                            <div class="mt-0 mb-1 fs-5 fw-normal lh-1">
+                                Time Off Approvals
+                            </div>
+                            <div class="opacity-75">
+                                Approve employee time off
+                            </div>
+                        </div>
+
+                    </a>
+                </div>
+
+            </t>
+
+        </xpath>
+    </template>
+
+</odoo>
+
+
+
+
+
+
+
+
+
+
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<odoo>-->
+
+<!--    <template id="portal_home_timeoff"-->
+<!--              inherit_id="portal.portal_my_home"-->
+<!--              priority="100">-->
+
+<!--        &lt;!&ndash; Insert AFTER existing vendor cards &ndash;&gt;-->
+<!--        <xpath expr="//div[@id='portal_vendor_category']"-->
+<!--               position="inside">-->
+
+<!--            <div class="o_portal_index_card col-md-6 order-2">-->
+<!--                <a href="/my/timeoff"-->
+<!--                   class="d-flex gap-2 gap-md-3 py-3 pe-2 px-md-3 h-100 rounded text-decoration-none bg-100">-->
+
+<!--                    &lt;!&ndash; icon &ndash;&gt;-->
+<!--                    <div class="o_portal_icon d-block align-self-start">-->
+<!--                        <i class="fa fa-calendar fa-2x text-primary"/>-->
+<!--                    </div>-->
+
+<!--                    &lt;!&ndash; text &ndash;&gt;-->
+<!--                    <div>-->
+<!--                        <div class="mt-0 mb-1 fs-5 fw-normal lh-1 d-flex gap-2">-->
+<!--                            My Time Off-->
+<!--                        </div>-->
+<!--                        <div class="opacity-75">-->
+<!--                            View and request time off-->
+<!--                        </div>-->
+<!--                    </div>-->
+
+<!--                </a>-->
+<!--            </div>-->
+
+<!--        </xpath>-->
+<!--    </template>-->
+<!--        <template id="portal_my_timeoff_approvals"-->
+<!--              inherit_id="portal.portal_my_home"-->
+<!--              priority="110">-->
+
+<!--        &lt;!&ndash; Insert AFTER existing vendor cards &ndash;&gt;-->
+<!--        <xpath expr="//div[@id='portal_vendor_category']"-->
+<!--               position="inside">-->
+
+<!--            <div class="o_portal_index_card col-md-6 order-2">-->
+<!--                <a href="/my/timeoff/approvals"-->
+<!--                   class="d-flex gap-2 gap-md-3 py-3 pe-2 px-md-3 h-100 rounded text-decoration-none bg-100">-->
+
+<!--                    &lt;!&ndash; icon &ndash;&gt;-->
+<!--                    <div class="o_portal_icon d-block align-self-start">-->
+<!--                        <i class="fa fa-check-square fa-2x text-primary"/>-->
+<!--                    </div>-->
+
+<!--                    &lt;!&ndash; text &ndash;&gt;-->
+<!--                    <div>-->
+<!--                        <div class="mt-0 mb-1 fs-5 fw-normal lh-1 d-flex gap-2">-->
+<!--                            Time Off Approvals-->
+<!--                        </div>-->
+<!--                        <div class="opacity-75">-->
+<!--                            Approve employee time off-->
+<!--                        </div>-->
+<!--                    </div>-->
+
+<!--                </a>-->
+<!--            </div>-->
+
+<!--        </xpath>-->
+<!--    </template>-->
+<!--</odoo>-->
+
+
+
