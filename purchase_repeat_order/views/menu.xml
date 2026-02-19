@@ -1,21 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+    <data>
 
-    <!-- ACTION: Repeated Orders -->
-    <record id="action_repeated_purchase_orders" model="ir.actions.act_window">
-        <field name="name">Repeated Orders</field>
-        <field name="res_model">purchase.order</field>
-        <field name="view_mode">list,form</field>
+        <!-- ACTION: Repeated Orders -->
+        <record id="action_repeated_purchase_orders" model="ir.actions.act_window">
+            <field name="name">Repeated Orders</field>
+            <field name="res_model">purchase.order</field>
+            <field name="view_mode">list,form</field>
 
-        <!-- Context used to show RO / Close buttons -->
-        <field name="context">{'from_repeated_orders_menu': True}</field>
-    </record>
+            <!-- Context used to show RO / Close buttons -->
+            <field name="context">{'from_repeated_orders_menu': True}</field>
+        </record>
 
-    <!-- MENU: Purchase → Orders → Repeated Orders -->
-    <menuitem id="menu_repeated_purchase_orders"
-              name="Repeated Orders"
-              parent="purchase.menu_procurement_management"
-              action="action_repeated_purchase_orders"
-              sequence="40"/>
+        <!-- MENU: Purchase → Orders → Repeated Orders -->
+        <menuitem id="menu_repeated_purchase_orders"
+                  name="Repeated Orders"
+                  parent="purchase.menu_procurement_management"
+                  action="action_repeated_purchase_orders"
+                  sequence="40"/>
 
+
+        <!-- Menu under Purchase -->
+        <menuitem id="menu_subscription_purchase_orders"
+                  name="Subscription POs"
+                  parent="purchase.menu_procurement_management"
+                  action="action_subscription_purchase_orders"
+                  sequence="60"/>
+
+    </data>
 </odoo>
+
+
+
+
+
+
+
+
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+<!--<odoo>-->
+
+<!--    &lt;!&ndash; ACTION: Repeated Orders &ndash;&gt;-->
+<!--    <record id="action_repeated_purchase_orders" model="ir.actions.act_window">-->
+<!--        <field name="name">Repeated Orders</field>-->
+<!--        <field name="res_model">purchase.order</field>-->
+<!--        <field name="view_mode">list,form</field>-->
+
+<!--        &lt;!&ndash; Context used to show RO / Close buttons &ndash;&gt;-->
+<!--        <field name="context">{'from_repeated_orders_menu': True}</field>-->
+<!--    </record>-->
+
+<!--    &lt;!&ndash; MENU: Purchase → Orders → Repeated Orders &ndash;&gt;-->
+<!--    <menuitem id="menu_repeated_purchase_orders"-->
+<!--              name="Repeated Orders"-->
+<!--              parent="purchase.menu_procurement_management"-->
+<!--              action="action_repeated_purchase_orders"-->
+<!--              sequence="40"/>-->
+
+
+<!--&lt;!&ndash; Menu under Purchase &ndash;&gt;-->
+<!--<menuitem id="menu_subscription_purchase_orders"-->
+<!--          name="Subscription POs"-->
+<!--          parent="purchase.menu_procurement_management"-->
+<!--          action="action_subscription_purchase_orders"-->
+<!--          sequence="60"/>-->
+
+
+
+<!--</odoo>-->

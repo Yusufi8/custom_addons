@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+
+        <!-- ========================= -->
+        <!-- TREE VIEW -->
+        <!-- ========================= -->
+
+        <record id="view_subscription_purchase_order_list" model="ir.ui.view">
+            <field name="name">subscription.purchase.order.list</field>
+            <field name="model">subscription.purchase.order</field>
+            <field name="arch" type="xml">
+                <list string="Subscription Purchase Orders">
+                    <field name="name"/>
+                    <field name="vendor_id"/>
+                    <field name="frequency"/>
+                    <field name="next_invoice_date"/>
+                    <field name="amount"/>
+                    <field name="state" widget="badge" decoration-info="state == 'draft'"
+                           decoration-success="state == 'running'" decoration-muted="state == 'closed'"/>
+                </list>
+            </field>
+        </record>
+
+
+        <!-- ========================= -->
+        <!-- SEARCH VIEW -->
+        <!-- ========================= -->
+
+        <record id="view_subscription_purchase_order_search" model="ir.ui.view">
+            <field name="name">subscription.purchase.order.search</field>
+            <field name="model">subscription.purchase.order</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="name"/>
+                    <field name="vendor_id"/>
+                    <field name="product_id"/>
+                    <field name="state"/>
+                    <filter string="Running" name="running" domain="[('state','=','running')]"/>
+                    <filter string="Closed" name="closed" domain="[('state','=','closed')]"/>
+                    <separator/>
+                    <filter string="Due Today" name="due_today" domain="[('next_invoice_date','=',context_today())]"/>
+                    <group expand="0" string="Group By">
+                        <filter string="Vendor" name="vendor" context="{'group_by': 'vendor_id'}"/>
+                        <filter string="State" name="state" context="{'group_by': 'state'}"/>
+                        <filter string="Frequency" name="frequency" context="{'group_by': 'frequency'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+
+        <!-- ========================= -->
+        <!-- FORM VIEW -->
+        <!-- ========================= -->
+
+        <record id="view_subscription_purchase_order_form" model="ir.ui.view">
+            <field name="name">subscription.purchase.order.form</field>
+            <field name="model">subscription.purchase.order</field>
+            <field name="arch" type="xml">
+                <form string="Subscription Purchase Order">
+
+                    <!-- ===== HEADER ===== -->
+                    <header>
+                        <button name="action_start"
+                                type="object"
+                                string="Start"
+                                class="btn-primary"
+                                invisible="state != 'draft'"/>
+
+                        <button name="action_raise_po"
+                                type="object"
+                                string="Raise PO"
+                                class="btn-success"
+                                invisible="state != 'running'"/>
+
+                        <button name="action_close"
+                                type="object"
+                                string="Close"
+                                class="btn-secondary"
+                                invisible="state == 'closed'"/>
+
+                        <field name="state" widget="statusbar" statusbar_visible="draft,running,closed"/>
+                    </header>
+
+                    <!-- ===== BODY ===== -->
+                    <sheet>
+                        <!-- SMART BUTTON -->
+                        <div class="oe_button_box" name="button_box">
+                            <button name="action_view_po"
+                                    type="object"
+                                    class="oe_stat_button"
+                                    icon="fa-shopping-cart">
+                                <field name="po_count" widget="statinfo" string="Purchase Orders"/>
+                            </button>
+                        </div>
+
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name" readonly="1"/>
+                            </h1>
+                        </div>
+
+                        <!-- MAIN GROUP -->
+                        <group>
+                            <group string="General Information">
+                                <field name="vendor_id" readonly="state != 'draft'"/>
+                                <field name="product_id" readonly="state != 'draft'"/>
+                                <field name="product_description"/>
+                                <field name="po_type"/>
+                                <field name="days_to_notify"/>
+                            </group>
+
+                            <group string="Pricing &amp; Quantity">
+                                <label for="quantity"/>
+                                <div class="o_row">
+                                    <field name="quantity" readonly="state != 'draft'"/>
+                                    <field name="unit" groups="uom.group_uom" readonly="state != 'draft'"/>
+                                </div>
+                                <field name="unit_price" readonly="state != 'draft'"/>
+                                <field name="tax" readonly="state != 'draft'"/>
+                                <field name="sub_amount" widget="monetary" readonly="1"/>
+                                <field name="amount" widget="monetary" readonly="1"/>
+                            </group>
+
+                            <group string="Subscription Schedule">
+                                <field name="frequency" readonly="state != 'draft'"/>
+                                <field name="start_date" readonly="state != 'draft'"/>
+                                <field name="next_invoice_date" readonly="1"/>
+                            </group>
+
+                            <group string="Accounting &amp; Payments">
+                                <field name="payment_method"/>
+                                <field name="payment_type"/>
+                            </group>
+                        </group>
+                        <notebook string="Details">
+                            <page string="Employees Details"/>
+                            <page string="Contact Lines"/>
+                        </notebook>
+                        <chatter>
+                            <field name="message_follower_ids" groups="base.group_user"/>
+                            <field name="message_ids"/>
+                        </chatter>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+
+        <!-- ========================= -->
+        <!-- ACTION -->
+        <!-- ========================= -->
+
+        <record id="action_subscription_purchase_orders" model="ir.actions.act_window">
+            <field name="name">Subscription Purchase Orders</field>
+            <field name="res_model">subscription.purchase.order</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="view_subscription_purchase_order_search"/>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first Subscription Purchase Order!
+                </p>
+            </field>
+        </record>
+
+    </data>
+</odoo>

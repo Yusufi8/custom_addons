@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- Main template used by _send_subscription_email() via:
+         purchase_repeat_order.email_template_subscription_po -->
+    <record id="email_template_subscription_po" model="mail.template">
+        <field name="name">Subscription: Purchase Order Notification</field>
+        <field name="model_id" ref="purchase_repeat_order.model_subscription_purchase_order"/>
+        <field name="subject">{{ object.company_id.name }} Subscription PO (Ref {{ object.name or 'n/a' }})</field>
+        <field name="email_to">{{ object.vendor_id.email or '' }}</field>
+        <field name="email_from">{{ (object.company_id.email or user.email_formatted) }}</field>
+        <field name="description">Sent automatically to vendor when a subscription PO is generated</field>
+        <field name="body_html" type="html">
+<div style="margin: 0px; padding: 0px;">
+    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+        Dear <t t-out="object.vendor_id.name or ''">Vendor</t>
+        <t t-if="object.vendor_id.parent_id">
+            (<t t-out="object.vendor_id.parent_id.name or ''">Company</t>)
+        </t>,
+        <br/><br/>
+        A new purchase order has been automatically generated for your subscription
+        <span style="font-weight:bold;" t-out="object.name or ''">SUB/001</span>.
+        <br/><br/>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <tr>
+                <td style="padding: 4px 8px; font-weight: bold; width: 160px;">Product</td>
+                <td style="padding: 4px 8px;" t-out="object.product_id.display_name or ''">Product Name</td>
+            </tr>
+            <t t-if="object.product_description">
+            <tr>
+                <td style="padding: 4px 8px; font-weight: bold;">Description</td>
+                <td style="padding: 4px 8px;" t-out="object.product_description or ''"></td>
+            </tr>
+            </t>
+            <tr>
+                <td style="padding: 4px 8px; font-weight: bold;">Quantity</td>
+                <td style="padding: 4px 8px;">
+                    <t t-out="object.quantity or ''">1.0</t>
+                    <t t-if="object.unit"> <t t-out="object.unit.name or ''">Units</t></t>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 8px; font-weight: bold;">Unit Price</td>
+                <td style="padding: 4px 8px;" t-out="format_amount(object.unit_price, object.currency_id) or ''">0.00</td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 8px; font-weight: bold;">Subtotal</td>
+                <td style="padding: 4px 8px;" t-out="format_amount(object.sub_amount, object.currency_id) or ''">0.00</td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 8px; font-weight: bold;">Total (incl. tax)</td>
+                <td style="padding: 4px 8px; font-weight: bold;" t-out="format_amount(object.amount, object.currency_id) or ''">0.00</td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 8px; font-weight: bold;">Frequency</td>
+                <td style="padding: 4px 8px;" t-out="dict(object._fields['frequency'].selection).get(object.frequency, '') or ''">Monthly</td>
+            </tr>
+            <t t-if="object.next_invoice_date">
+            <tr>
+                <td style="padding: 4px 8px; font-weight: bold;">Next PO Date</td>
+                <td style="padding: 4px 8px;" t-out="format_date(object.next_invoice_date) or ''">01/01/2027</td>
+            </tr>
+            </t>
+            <t t-if="object.purchase_order_id">
+            <tr>
+                <td style="padding: 4px 8px; font-weight: bold;">PO Reference</td>
+                <td style="padding: 4px 8px;" t-out="object.purchase_order_id.name or ''">P00001</td>
+            </tr>
+            </t>
+        </table>
+        <br/>
+        If you have any questions regarding this order, please do not hesitate to contact us.
+        <br/><br/>
+        Best regards,<br/>
+        <t t-out="object.company_id.name or ''">YourCompany</t>
+    </p>
+</div>
+        </field>
+        <field name="lang">{{ object.vendor_id.lang }}</field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+
+    <!-- Reminder template used by _send_subscription_reminder() via:
+         purchase_repeat_order.email_template_subscription_reminder -->
+    <record id="email_template_subscription_reminder" model="mail.template">
+        <field name="name">Subscription: Upcoming Renewal Reminder</field>
+        <field name="model_id" ref="purchase_repeat_order.model_subscription_purchase_order"/>
+        <field name="subject">{{ object.company_id.name }} Subscription Renewal Reminder (Ref {{ object.name or 'n/a' }})</field>
+        <field name="email_to">{{ object.vendor_id.email or '' }}</field>
+        <field name="email_from">{{ (object.company_id.email or user.email_formatted) }}</field>
+        <field name="description">Sent to vendor before the next subscription PO date</field>
+        <field name="body_html" type="html">
+<div style="margin: 0px; padding: 0px;">
+    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+        Dear <t t-out="object.vendor_id.name or ''">Vendor</t>
+        <t t-if="object.vendor_id.parent_id">
+            (<t t-out="object.vendor_id.parent_id.name or ''">Company</t>)
+        </t>,
+        <br/><br/>
+        This is a reminder that your subscription
+        <span style="font-weight:bold;" t-out="object.name or ''">SUB/001</span>
+        for <span style="font-weight:bold;" t-out="object.product_id.display_name or ''">Product</span>
+        is due for renewal.
+        <br/><br/>
+        <t t-if="object.next_invoice_date">
+            The next purchase order will be raised on
+            <span style="font-weight:bold;" t-out="format_date(object.next_invoice_date) or ''">01/01/2027</span>.
+            <br/><br/>
+        </t>
+        Please ensure availability and confirm if you will be able to fulfill this order on time.
+        <br/><br/>
+        Best regards,<br/>
+        <t t-out="object.company_id.name or ''">YourCompany</t>
+    </p>
+</div>
+        </field>
+        <field name="lang">{{ object.vendor_id.lang }}</field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+
+</odoo>

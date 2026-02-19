@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="ir_cron_subscription_purchase_process" model="ir.cron">
+            <field name="name">Subscription: Process Purchase Orders</field>
+
+            <!-- Model -->
+            <field name="model_id" ref="model_subscription_purchase_order"/>
+
+            <!-- Execute Python Code -->
+            <field name="state">code</field>
+            <field name="code">model._cron_process_subscriptions()</field>
+
+            <!-- Run as Admin -->
+            <field name="user_id" ref="base.user_root"/>
+
+            <!-- Run Every Day -->
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+
+<!--            &lt;!&ndash; Optional: Set First Execution &ndash;&gt;-->
+<!--            <field name="nextcall"-->
+<!--                   eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')"/>-->
+
+            <!-- Priority -->
+            <field name="priority">5</field>
+
+
+            <!-- Active -->
+            <field name="active">True</field>
+
+        </record>
+
+    </data>
+</odoo>

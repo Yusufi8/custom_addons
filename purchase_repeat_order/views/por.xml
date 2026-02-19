@@ -1,31 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+    <data>
 
-    <!-- FORM VIEW -->
-    <record id="view_purchase_order_form_po_operation" model="ir.ui.view">
-        <field name="name">purchase.order.form.po.operation</field>
-        <field name="model">purchase.order</field>
-        <field name="inherit_id" ref="purchase.purchase_order_form"/>
-        <field name="arch" type="xml">
+        <!-- FORM VIEW -->
+        <record id="view_purchase_order_form_po_operation" model="ir.ui.view">
+            <field name="name">purchase.order.form.po.operation</field>
+            <field name="model">purchase.order</field>
+            <field name="inherit_id" ref="purchase.purchase_order_form"/>
+            <field name="arch" type="xml">
 
-         <xpath expr="//header" position="inside">
+             <xpath expr="//header" position="inside">
 
-    <!-- RO button -->
-    <button name="action_repeat_order"
-            string="RO"
-            type="object"
-            class="btn-primary"
-            invisible="not context.get('from_repeated_orders_menu') or is_closed_operation"/>
+        <!-- RO button -->
+        <button name="action_repeat_order"
+                string="RO"
+                type="object"
+                class="btn-primary"
+                invisible="not context.get('from_repeated_orders_menu') or is_closed_operation"/>
 
-    <!-- Close button -->
-    <button name="action_close_operation"
-            string="Close"
-            type="object"
-            invisible="not context.get('from_repeated_orders_menu') or is_closed_operation"/>
+        <!-- Close button -->
+        <button name="action_close_operation"
+                string="Close"
+                type="object"
+                invisible="not context.get('from_repeated_orders_menu') or is_closed_operation"/>
 
-</xpath>
+    </xpath>
 
-        </field>
-    </record>
+            </field>
+        </record>
 
+    </data>
 </odoo>
+
+
+
+
+
+
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+<!--<odoo>-->
+
+<!--    &lt;!&ndash; FORM VIEW &ndash;&gt;-->
+<!--    <record id="view_purchase_order_form_po_operation" model="ir.ui.view">-->
+<!--        <field name="name">purchase.order.form.po.operation</field>-->
+<!--        <field name="model">purchase.order</field>-->
+<!--        <field name="inherit_id" ref="purchase.purchase_order_form"/>-->
+<!--        <field name="arch" type="xml">-->
+
+<!--         <xpath expr="//header" position="inside">-->
+
+<!--    &lt;!&ndash; RO button &ndash;&gt;-->
+<!--    <button name="action_repeat_order"-->
+<!--            string="RO"-->
+<!--            type="object"-->
+<!--            class="btn-primary"-->
+<!--            invisible="not context.get('from_repeated_orders_menu') or is_closed_operation"/>-->
+
+<!--    &lt;!&ndash; Close button &ndash;&gt;-->
+<!--    <button name="action_close_operation"-->
+<!--            string="Close"-->
+<!--            type="object"-->
+<!--            invisible="not context.get('from_repeated_orders_menu') or is_closed_operation"/>-->
+
+<!--</xpath>-->
+
+<!--        </field>-->
+<!--    </record>-->
+
+<!--</odoo>-->

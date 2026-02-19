@@ -62,3 +62,4 @@ class PurchaseOrder(models.Model):
         })
 
         return {'type': 'ir.actions.act_window_close'}
+
