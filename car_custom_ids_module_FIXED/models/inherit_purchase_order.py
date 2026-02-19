@@ -50,6 +50,9 @@ class PurchaseOrder(models.Model):
     def action_receive_customs_id(self):
         self.ensure_one()
         CustomOp = self.env['stock.operation.customids']
+        action = self.env.ref('car_custom_ids_module_FIXED.action_customids').read()[0]
+        action["context"] = dict(self.env.context, create=False, delete=False, edit=True)
+        form_view = self.env.ref('car_custom_ids_module_FIXED.view_customids_form')
 
         existing_op = CustomOp.search([
             ('purchase_order_id', '=', self.id),
@@ -57,14 +60,13 @@ class PurchaseOrder(models.Model):
         ], limit=1)
 
         if existing_op:
-            return {
-                'type': 'ir.actions.act_window',
-                'name': 'Custom IDs',
-                'res_model': 'stock.operation.customids',
+            action.update({
                 'res_id': existing_op.id,
                 'view_mode': 'form',
+                'views': [(form_view.id, 'form')],
                 'target': 'current',
-            }
+            })
+            return action
 
         op = CustomOp.create({
             'partner_id': self.partner_id.id,
@@ -76,14 +78,13 @@ class PurchaseOrder(models.Model):
 
         op.create_lines()
 
-        return {
-            'type': 'ir.actions.act_window',
-            'name': 'Custom IDs',
-            'res_model': 'stock.operation.customids',
+        action.update({
             'res_id': op.id,
             'view_mode': 'form',
+            'views': [(form_view.id, 'form')],
             'target': 'current',
-        }
+        })
+        return action
 
 
 

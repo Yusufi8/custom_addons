@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+<!--    <record id="view_order_line_form" model="ir.ui.view">-->
+<!--        <field name="name">sale.order.line.form.inherit</field>-->
+<!--        <field name="model">sale.order.line</field>-->
+<!--        <field name="arch" type="xml">-->
+<!--            <form string="Sales Order Line">-->
+<!--                <field name="display_type" invisible="1"/>-->
+<!--                <sheet>-->
+<!--                    <group>-->
+<!--                        <group>-->
+<!--                            <field name="product_id" required="not display_type"/>-->
+<!--                            <label for="product_uom_qty"/>-->
+<!--                            <div class="o_row">-->
+<!--                                <field name="product_uom_qty" nolabel="1"/>-->
+<!--                                <field name="product_uom" groups="uom.group_uom" nolabel="1"/>-->
+<!--                            </div>-->
+<!--                        </group>-->
+<!--                        <group>-->
+<!--                            <field name="price_unit"/>-->
+<!--                            <field name="discount" groups="sale.group_discount_per_so_line"/>-->
+<!--                        </group>-->
+<!--                    </group>-->
+<!--                    <group>-->
+<!--                        <label for="lot_ids"/>-->
+<!--                        <field name="lot_ids"-->
+<!--                               widget="many2many_tags"-->
+<!--                               domain="[('product_id','=', product_id)]"-->
+<!--                               invisible="not show_lot_field"-->
+<!--                               required="require_lot_field"/>-->
+<!--                    </group>-->
+<!--                    <group>-->
+<!--                        <field name="name"/>-->
+<!--                    </group>-->
+<!--                </sheet>-->
+<!--            </form>-->
+<!--        </field>-->
+<!--    </record>-->
+
+    <record id="view_sale_order_form_inherit_hms" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.hms</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Make order lines readonly when confirmed (fallback for existing views) -->
+            <xpath expr="//field[@name='order_line']" position="attributes">
+                <attribute name="readonly">state == 'sale'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='order_line']" position="attributes">
+                <attribute name="mode">list</attribute>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list" position="attributes">
+                <attribute name="editable" remove="1"/>
+            </xpath>
+
+            <xpath expr="//field[@name='order_line']/list/control/create[@name='add_product_control']"
+                   position="attributes">
+                <attribute name="readonly">parent.state == 'sale'</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='order_line']/list/control/create[@name='add_section_control']"
+                   position="attributes">
+                <attribute name="readonly">parent.state == 'sale'</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='order_line']/list/control/create[@name='add_note_control']"
+                   position="attributes">
+                <attribute name="readonly">parent.state == 'sale'</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='order_line']/list/control/button[@name='action_add_from_catalog']"
+                   position="attributes">
+                <attribute name="readonly">parent.state == 'sale'</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_sale_orders" model="ir.actions.act_window">
+        <field name="name">Sales Orders</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">form,list</field>
+        <field name="domain">[('state', 'in', ('draft', 'sent'))]</field>
+        <field name="help" type="html">
+            <p class="o_view_no_content_smiling_face">
+                Create and manage your sales orders here.
+            </p>
+        </field>
+    </record>
+</odoo>

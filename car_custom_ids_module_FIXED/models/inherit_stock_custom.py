@@ -1,13 +1,17 @@
-# -*- coding: utf-8 -*-
-from odoo import models, fields, api
-from odoo.exceptions import UserError, ValidationError
+from odoo import models, fields, api, _
+from odoo.exceptions import UserError, ValidationError, AccessError
 
 
 class StockOperationHead(models.Model):
     _name = 'stock.operation.customids'
     _description = 'Inventory Operation Custom IDs'
     _inherit = ['mail.thread', 'mail.activity.mixin']
-    _rec_name = "sale_purchase_reference"
+    _rec_name = "reference"
+    _order = "create_date desc, id desc"
+
+    reference = fields.Char(
+        string="Reference", required=True, copy=False, readonly=True, default=lambda self: _('New')
+    )
 
     operation_type = fields.Selection([
         ('po', 'Purchase Order'),
@@ -21,7 +25,7 @@ class StockOperationHead(models.Model):
     partner_id = fields.Many2one('res.partner', string='Partner')
     purchase_order_id = fields.Many2one('purchase.order', string="Linked Purchase Order")
     sale_order_id = fields.Many2one('sale.order', string="Linked Sales Order")
-    date = fields.Date(string="Date")
+    date = fields.Date(string="Date", default=fields.Date.context_today)
     sale_purchase_reference = fields.Char(string="Source Number")
     status = fields.Selection([
         ('draft', 'Draft'),
@@ -42,122 +46,205 @@ class StockOperationHead(models.Model):
     def name_get(self):
         result = []
         for record in self:
-            name = record.sale_purchase_reference if record.sale_purchase_reference else f"{record._name}, {record.id}"
+            name = record.reference or _('New')
             result.append((record.id, name))
         return result
 
-    def action_confirm_operation(self):
-        """ Confirms the operation: validate lines and write Customs ID onto lots.
-        Validation added:
-        - Prevent confirming if the lot already has a different custom_id.
-        - Prevent conflicting assignment if another operation for the same purchase already references this lot.
-        """
-        for record in self:
-            missing_ids = record.line_ids.filtered(lambda l: not l.custom_id)
-            if missing_ids:
-                raise UserError("All lines must have a Customs ID before confirming.")
-
-            for line in record.line_ids:
-                if not line.product_id or not line.product_id.is_car:
-                    raise ValidationError("Only Car products are allowed in this operation.")
-
-                # Resolve lot from serial if needed
-                if not line.lot_id and line.serial_chassis_number:
-                    lots = self.env['stock.lot'].search([
-                        ('name', '=', line.serial_chassis_number),
-                        ('product_id', '=', line.product_id.id)
-                    ])
-                    if not lots:
-                        raise UserError(f"Serial '{line.serial_chassis_number}' not found as a Lot for product {line.product_id.display_name}.")
-                    if len(lots) > 1:
-                        raise UserError(f"Multiple lots found with serial '{line.serial_chassis_number}' for product {line.product_id.display_name}. Please set the Lot manually.")
-                    line.sudo().write({'lot_id': lots[0].id})
-
-                if not line.lot_id:
-                    raise ValidationError("Lot is mandatory for each line.")
-
-                # If the lot already has a custom_id, ensure we don't overwrite it with a different one
-                if line.lot_id.custom_id:
-                    if line.lot_id.custom_id != line.custom_id:
-                        raise UserError(
-                            f"Lot {line.lot_id.name} already has Customs ID '{line.lot_id.custom_id}'.\n"
-                            f"You cannot assign a different Customs ID ('{line.custom_id}') to the same lot."
-                        )
-                    # If it's identical, no-op for that lot
-                    continue
-
-                # Ensure no other operation line for the same purchase references this lot (avoid duplicates across operations)
-                if record.purchase_order_id and line.lot_id:
-                    dup = self.env['stock.operation.customids.line'].search([
-                        ('lot_id', '=', line.lot_id.id),
-                        ('head_id.purchase_order_id', '=', record.purchase_order_id.id),
-                        ('head_id', '!=', record.id),
-                    ], limit=1)
-                    if dup:
-                        raise UserError(
-                            f"Lot {line.lot_id.name} is already present in another Customs operation (ID {dup.head_id.id}) for Purchase Order {record.purchase_order_id.name}."
-                            "Please edit the existing operation instead of creating a duplicate."
-                        )
-
-                # Write the wizard's Custom ID to the actual Stock Lot (persist it)
-                try:
-                    line.lot_id.sudo().write({'custom_id': line.custom_id})
-                except Exception as e:
-                    raise UserError(f"Failed to write Customs ID '{line.custom_id}' to Lot {line.lot_id.name}: {e}")
-
-            # mark operation confirmed
-            record.status = 'confirmed'
-
-            # recompute linked orders' computed statuses (safe, will reflect this operation)
-            if record.purchase_order_id:
-                try:
-                    record.purchase_order_id._compute_customids_status()
-                except Exception:
-                    pass
-            if record.sale_order_id:
-                try:
-                    record.sale_order_id._compute_customids_status()
-                except Exception:
-                    pass
+    @api.model
+    def create(self, vals):
+        if vals.get('reference', 'New') == 'New':
+            vals['reference'] = self.env['ir.sequence'].next_by_code('stock.operation.customids') or 'New'
+        if not vals.get('date'):
+            vals['date'] = fields.Date.context_today(self)
+        return super(StockOperationHead , self).create(vals)
 
     def action_confirm_operation(self):
         for record in self:
             if not record.line_ids:
                 raise ValidationError("Please add at least one line.")
 
+            # 🔢 Group lines by product + lot
+            from collections import defaultdict
+            bucket = defaultdict(list)
+
             for line in record.line_ids:
-                if not line.custom_id:
-                    raise ValidationError(
-                        f"Customs ID missing for {line.product_id.display_name}"
-                    )
+                if not line.product_id:
+                    raise ValidationError("Product is mandatory.")
 
                 if not line.lot_id:
-                    raise ValidationError("Lot / Serial is mandatory.")
-
-                # 🚫 Prevent same lot reused in same PO
-                duplicate = self.search([
-                    ('id', '!=', record.id),
-                    ('purchase_order_id', '=', record.purchase_order_id.id),
-                    ('line_ids.lot_id', '=', line.lot_id.id),
-                    ('status', '=', 'confirmed'),
-                ])
-                if duplicate:
                     raise ValidationError(
-                        f"Lot {line.lot_id.name} already has a Customs ID."
+                        f"Lot / Serial is mandatory for {line.product_id.display_name}"
                     )
 
-                # ✅ Write to Purchase Order Line
-                if line.purchase_line_id:
-                    line.purchase_line_id.write({
-                        'custom_id': line.custom_id
-                    })
+                if not line.custom_id:
+                    raise ValidationError(
+                        f"Customs ID missing for {line.product_id.display_name} "
+                        f"(Lot: {line.lot_id.name})"
+                    )
 
-                # ✅ Write to Lot
-                line.lot_id.write({
-                    'custom_id': line.custom_id
-                })
+                if not line.product_id.is_car:
+                    raise ValidationError("Only Car products are allowed in this operation.")
+
+                bucket[(line.product_id.id, line.lot_id.id)].append(line)
+
+            # ✅ Quantity vs Customs ID validation
+            for (product_id, lot_id), lines in bucket.items():
+                total_qty = sum(l.quantity or 0 for l in lines)
+                customs_count = len(lines)
+
+                if customs_count != total_qty:
+                    raise ValidationError(
+                        "Customs ID count mismatch ❌\n\n"
+                        f"Product ID: {product_id}\n"
+                        f"Lot ID: {lot_id}\n"
+                        f"Expected Customs IDs: {total_qty}\n"
+                        f"Found: {customs_count}\n\n"
+                        "Each unit quantity MUST have exactly one Customs ID."
+                    )
+
+            # 🚫 Prevent duplicate lot usage across confirmed operations (same PO)
+            if record.purchase_order_id:
+                for line in record.line_ids:
+                    dup = self.search([
+                        ('id', '!=', record.id),
+                        ('purchase_order_id', '=', record.purchase_order_id.id),
+                        ('line_ids.lot_id', '=', line.lot_id.id),
+                        ('status', '=', 'confirmed'),
+                    ], limit=1)
+                    if dup:
+                        raise ValidationError(
+                            f"Lot {line.lot_id.name} already has a confirmed Customs ID "
+                            f"for Purchase Order {record.purchase_order_id.name}."
+                        )
+
+            # ✍️ Persist Customs ID to Lot and PO Line
+            for line in record.line_ids:
+                if line.lot_id.custom_id and line.lot_id.custom_id != line.custom_id:
+                    raise ValidationError(
+                        f"Lot {line.lot_id.name} already has Customs ID "
+                        f"'{line.lot_id.custom_id}'. Cannot overwrite."
+                    )
+
+                line.lot_id.sudo().write({'custom_id': line.custom_id})
+
+                if line.purchase_line_id:
+                    line.purchase_line_id.write({'custom_id': line.custom_id})
 
             record.status = 'confirmed'
+
+    #
+    # def action_confirm_operation(self):
+    #     """ Confirms the operation: validate lines and write Customs ID onto lots.
+    #     Validation added:
+    #     - Prevent confirming if the lot already has a different custom_id.
+    #     - Prevent conflicting assignment if another operation for the same purchase already references this lot.
+    #     """
+    #     for record in self:
+    #         missing_ids = record.line_ids.filtered(lambda l: not l.custom_id)
+    #         if missing_ids:
+    #             raise UserError("All lines must have a Customs ID before confirming.")
+    #
+    #         for line in record.line_ids:
+    #             if not line.product_id or not line.product_id.is_car:
+    #                 raise ValidationError("Only Car products are allowed in this operation.")
+    #
+    #             # Resolve lot from serial if needed
+    #             if not line.lot_id and line.serial_chassis_number:
+    #                 lots = self.env['stock.lot'].search([
+    #                     ('name', '=', line.serial_chassis_number),
+    #                     ('product_id', '=', line.product_id.id)
+    #                 ])
+    #                 if not lots:
+    #                     raise UserError(f"Serial '{line.serial_chassis_number}' not found as a Lot for product {line.product_id.display_name}.")
+    #                 if len(lots) > 1:
+    #                     raise UserError(f"Multiple lots found with serial '{line.serial_chassis_number}' for product {line.product_id.display_name}. Please set the Lot manually.")
+    #                 line.sudo().write({'lot_id': lots[0].id})
+    #
+    #             if not line.lot_id:
+    #                 raise ValidationError("Lot is mandatory for each line.")
+    #
+    #             # If the lot already has a custom_id, ensure we don't overwrite it with a different one
+    #             if line.lot_id.custom_id:
+    #                 if line.lot_id.custom_id != line.custom_id:
+    #                     raise UserError(
+    #                         f"Lot {line.lot_id.name} already has Customs ID '{line.lot_id.custom_id}'.\n"
+    #                         f"You cannot assign a different Customs ID ('{line.custom_id}') to the same lot."
+    #                     )
+    #                 # If it's identical, no-op for that lot
+    #                 continue
+    #
+    #             # Ensure no other operation line for the same purchase references this lot (avoid duplicates across operations)
+    #             if record.purchase_order_id and line.lot_id:
+    #                 dup = self.env['stock.operation.customids.line'].search([
+    #                     ('lot_id', '=', line.lot_id.id),
+    #                     ('head_id.purchase_order_id', '=', record.purchase_order_id.id),
+    #                     ('head_id', '!=', record.id),
+    #                 ], limit=1)
+    #                 if dup:
+    #                     raise UserError(
+    #                         f"Lot {line.lot_id.name} is already present in another Customs operation (ID {dup.head_id.id}) for Purchase Order {record.purchase_order_id.name}."
+    #                         "Please edit the existing operation instead of creating a duplicate."
+    #                     )
+    #
+    #             # Write the wizard's Custom ID to the actual Stock Lot (persist it)
+    #             try:
+    #                 line.lot_id.sudo().write({'custom_id': line.custom_id})
+    #             except Exception as e:
+    #                 raise UserError(f"Failed to write Customs ID '{line.custom_id}' to Lot {line.lot_id.name}: {e}")
+    #
+    #         # mark operation confirmed
+    #         record.status = 'confirmed'
+    #
+    #         # recompute linked orders' computed statuses (safe, will reflect this operation)
+    #         if record.purchase_order_id:
+    #             try:
+    #                 record.purchase_order_id._compute_customids_status()
+    #             except Exception:
+    #                 pass
+    #         if record.sale_order_id:
+    #             try:
+    #                 record.sale_order_id._compute_customids_status()
+    #             except Exception:
+    #                 pass
+    #
+    # def action_confirm_operation(self):
+    #     for record in self:
+    #         if not record.line_ids:
+    #             raise ValidationError("Please add at least one line.")
+    #
+    #         for line in record.line_ids:
+    #             if not line.custom_id:
+    #                 raise ValidationError(
+    #                     f"Customs ID missing for {line.product_id.display_name}"
+    #                 )
+    #
+    #             if not line.lot_id:
+    #                 raise ValidationError("Lot / Serial is mandatory.")
+    #
+    #             # 🚫 Prevent same lot reused in same PO
+    #             duplicate = self.search([
+    #                 ('id', '!=', record.id),
+    #                 ('purchase_order_id', '=', record.purchase_order_id.id),
+    #                 ('line_ids.lot_id', '=', line.lot_id.id),
+    #                 ('status', '=', 'confirmed'),
+    #             ])
+    #             if duplicate:
+    #                 raise ValidationError(
+    #                     f"Lot {line.lot_id.name} already has a Customs ID."
+    #                 )
+    #
+    #             # ✅ Write to Purchase Order Line
+    #             if line.purchase_line_id:
+    #                 line.purchase_line_id.write({
+    #                     'custom_id': line.custom_id
+    #                 })
+    #
+    #             # ✅ Write to Lot
+    #             line.lot_id.write({
+    #                 'custom_id': line.custom_id
+    #             })
+    #
+    #         record.status = 'confirmed'
 
     @api.model
     def create_lines(self):
@@ -261,6 +348,14 @@ class StockOperationLine(models.Model):
                     f"Customs ID '{record.custom_id}' is already used in another operation."
                 )
 
+    def write(self, vals):
+        if "custom_id" in vals:
+            locked = self.filtered(lambda l: l.head_id.status != "draft")
+            if locked:
+                raise ValidationError("Customs ID can only be edited in Draft status.")
+        return super().write(vals)
+
+
     @api.constrains('lot_id', 'head_id')
     def _check_duplicate_lot(self):
         for line in self:
@@ -279,6 +374,19 @@ class StockOperationLine(models.Model):
                     f"Lot '{line.lot_id.name}' already has a confirmed Customs ID for this Purchase Order."
                 )
 
+    @api.constrains('lot_id', 'custom_id')
+    def _check_lot_and_custom_id_not_same(self):
+        for line in self:
+            if not line.lot_id or not line.custom_id:
+                continue
+
+            if line.lot_id.name.strip() == line.custom_id.strip():
+                raise ValidationError(
+                    "Lot / Serial Number and Customs ID must be DIFFERENT.\n\n"
+                    f"You entered the same value '{line.custom_id}' for both."
+)
+            # Custom and lot ids validation
+
 
 class IrAttachment(models.Model):
     _inherit = 'ir.attachment'
@@ -291,3 +399,25 @@ class IrAttachment(models.Model):
                 if related_record and related_record.exists() and related_record.status != 'draft':
                     raise UserError("You cannot delete attachments when the status is not 'draft'.")
         return super(IrAttachment, self).unlink()
+
+
+#
+# class CustomId(models.Model):
+#     _name = 'custom.id'
+#     _description = 'Custom IDs'
+#
+#     name = fields.Char(
+#         string="Custom ID No",
+#         required=True,
+#         readonly=True,
+#         copy=False,
+#         default='New'
+#     )
+#
+#     @api.model
+#     def create(self, vals):
+#         if vals.get('name', 'New') == 'New':
+#             vals['name'] = self.env['ir.sequence'].next_by_code(
+#                 'custom.id'
+#             ) or 'New'
+#         return super().create(vals)

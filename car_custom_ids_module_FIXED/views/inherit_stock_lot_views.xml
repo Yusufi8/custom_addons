@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Confirmed External IDs:
+      List view  →  stock.view_production_lot_tree   (id 1220)
+      Form view  →  stock.view_production_lot_form   (id 1219)
+
+    NOTE: <template> tag removed – it is not valid in a data XML file.
+    Badge colours come entirely from Odoo's built-in decoration-* system.
+    No custom CSS file needed.
+-->
+<odoo>
+
+    <!-- ================================================================
+         1.  LIST VIEW  ─  stock.view_production_lot_tree
+
+         Row background tint (decoration-*):
+           decoration-danger  → SOLD    (red row)
+           decoration-success → READY   (green row)
+           decoration-warning → PENDING (orange row)
+           decoration-info    → NEW     (blue row)
+
+         Columns added after product_id:
+           • lot_status     – widget="badge" coloured pill
+           • sale_order_ref – text, coloured red when SOLD / orange when PENDING
+    ================================================================ -->
+    <record id="stock_lot_list_view_inherit_status" model="ir.ui.view">
+        <field name="name">stock.production.lot.list.inherit.status</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="stock.view_production_lot_tree"/>
+        <field name="arch" type="xml">
+
+            <!-- Row-level background tint -->
+            <xpath expr="//list" position="attributes">
+                <attribute name="decoration-danger">lot_status == 'SOLD'</attribute>
+                <attribute name="decoration-success">lot_status == 'READY'</attribute>
+                <attribute name="decoration-warning">lot_status == 'PENDING'</attribute>
+                <attribute name="decoration-info">lot_status == 'NEW'</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='product_id']" position="after">
+
+                <!-- Status badge: coloured pill using Odoo built-in badge widget -->
+                <field
+                    name="lot_status"
+                    string="Status"
+                    widget="badge"
+                    readonly="1"
+                    optional="show"
+                    decoration-danger="lot_status == 'SOLD'"
+                    decoration-success="lot_status == 'READY'"
+                    decoration-warning="lot_status == 'PENDING'"
+                    decoration-info="lot_status == 'NEW'"
+                />
+
+                <!-- Sale Order Ref: text coloured to match status -->
+                <field
+                    name="sale_order_ref"
+                    string="Sale Order Ref"
+                    readonly="1"
+                    optional="show"
+                    decoration-danger="lot_status == 'SOLD'"
+                    decoration-warning="lot_status == 'PENDING'"
+                />
+
+            </xpath>
+        </field>
+    </record>
+
+
+    <!-- ================================================================
+         2.  FORM VIEW  ─  stock.view_production_lot_form
+
+         Inserts after "ref" (Internal Reference) in the left column
+         of main_group.  Both fields use the same badge/decoration logic.
+    ================================================================ -->
+    <record id="stock_lot_form_view_inherit_status" model="ir.ui.view">
+        <field name="name">stock.production.lot.form.inherit.status</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="stock.view_production_lot_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='ref']" position="after">
+
+                <field
+                    name="lot_status"
+                    string="Status"
+                    widget="badge"
+                    readonly="1"
+                    decoration-danger="lot_status == 'SOLD'"
+                    decoration-success="lot_status == 'READY'"
+                    decoration-warning="lot_status == 'PENDING'"
+                    decoration-info="lot_status == 'NEW'"
+                />
+
+                <field
+                    name="sale_order_ref"
+                    string="Sale Order Reference"
+                    readonly="1"
+                    decoration-danger="lot_status == 'SOLD'"
+                    decoration-warning="lot_status == 'PENDING'"
+                />
+
+            </xpath>
+        </field>
+    </record>
+
+
+    <!-- ================================================================
+         3.  lot_ids POPUP / QUICK FORM  ─  stock.view_lot_form
+         (the dialog that opens when clicking a lot tag in other models)
+
+         Uses optional="True" so Odoo silently skips this record
+         if the base view does not exist in the installed version.
+    ================================================================ -->
+    <record id="stock_lot_quick_form_inherit_status" model="ir.ui.view">
+        <field name="name">stock.lot.quick.form.inherit.status</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="stock.view_production_lot_form"/>
+        <field name="mode">extension</field>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='ref']" position="after">
+
+                <field
+                    name="lot_status"
+                    string="Status"
+                    widget="badge"
+                    readonly="1"
+                    decoration-danger="lot_status == 'SOLD'"
+                    decoration-success="lot_status == 'READY'"
+                    decoration-warning="lot_status == 'PENDING'"
+                    decoration-info="lot_status == 'NEW'"
+                />
+
+                <field
+                    name="sale_order_ref"
+                    string="Sale Order Ref"
+                    readonly="1"
+                />
+
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
+
+
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--&lt;!&ndash;-->
+<!--    Inheritance targets (confirmed from Odoo debug screenshots):-->
+<!--      List view  →  stock.view_production_lot_tree   (id 1220)-->
+<!--      Form view  →  stock.view_production_lot_form   (id 1219)-->
+<!--&ndash;&gt;-->
+<!--<odoo>-->
+
+<!--    &lt;!&ndash; ================================================================-->
+<!--         1.  LIST VIEW  ─  stock.view_production_lot_tree-->
+<!--         Adds three columns after product_id:-->
+<!--           • Status       (lot_status char)  – symbol + text, color-coded rows-->
+<!--           • Ready        (is_ready bool)    – tick ✔ / cross ✘ widget-->
+<!--           • Sale Order   (sale_order_ref)   – "S00209 [Done]"-->
+
+<!--         Row decorations:-->
+<!--           danger  (red)    → ● Sold-->
+<!--           success (green)  → ✔ Ready-->
+<!--           warning (orange) → ◑ Pending-->
+<!--           info    (blue)   → ◎ New-->
+<!--    ================================================================ &ndash;&gt;-->
+<!--    <record id="stock_lot_list_view_inherit_status" model="ir.ui.view">-->
+<!--        <field name="name">stock.production.lot.list.inherit.status</field>-->
+<!--        <field name="model">stock.lot</field>-->
+<!--        <field name="inherit_id" ref="stock.view_production_lot_tree"/>-->
+<!--        <field name="arch" type="xml">-->
+
+<!--            &lt;!&ndash; Add row-level color decorations to the list element &ndash;&gt;-->
+<!--            <xpath expr="//list" position="attributes">-->
+<!--                <attribute name="decoration-danger">lot_status == '● Sold'</attribute>-->
+<!--                <attribute name="decoration-success">lot_status == '✔ Ready'</attribute>-->
+<!--                <attribute name="decoration-warning">lot_status == '◑ Pending'</attribute>-->
+<!--                <attribute name="decoration-info">lot_status == '◎ New'</attribute>-->
+<!--            </xpath>-->
+
+<!--            &lt;!&ndash; Insert columns after product_id &ndash;&gt;-->
+<!--            <xpath expr="//field[@name='product_id']" position="after">-->
+
+<!--                &lt;!&ndash; FIELD 1: Status symbol column-->
+<!--                     ● Sold / ✔ Ready / ◑ Pending / ◎ New &ndash;&gt;-->
+<!--                <field-->
+<!--                    name="lot_status"-->
+<!--                    string="Status"-->
+<!--                    readonly="1"-->
+<!--                    optional="show"-->
+<!--                />-->
+<!--                -->
+
+<!--                &lt;!&ndash; FIELD 3: Sale Order reference + state-->
+<!--                     e.g.  S00209 [Done]  or  S00211 [Confirmed],  S00215 [Draft] &ndash;&gt;-->
+<!--                <field-->
+<!--                    name="sale_order_ref"-->
+<!--                    string="Sale Order Ref"-->
+<!--                    readonly="1"-->
+<!--                    optional="show"-->
+<!--                />-->
+
+<!--            </xpath>-->
+<!--        </field>-->
+<!--    </record>-->
+
+
+<!--    &lt;!&ndash; ================================================================-->
+<!--         2.  FORM VIEW  ─  stock.view_production_lot_form-->
+<!--         Inserts after the "ref" field (Internal Reference) inside-->
+<!--         the left column of main_group.-->
+<!--         Shows:-->
+<!--           • Status         (lot_status)    – symbol label-->
+<!--           • Ready          (is_ready)      – boolean tick/cross-->
+<!--           • Sale Order Ref (sale_order_ref)– SO name + state-->
+<!--    ================================================================ &ndash;&gt;-->
+<!--    <record id="stock_lot_form_view_inherit_status" model="ir.ui.view">-->
+<!--        <field name="name">stock.production.lot.form.inherit.status</field>-->
+<!--        <field name="model">stock.lot</field>-->
+<!--        <field name="inherit_id" ref="stock.view_production_lot_form"/>-->
+<!--        <field name="arch" type="xml">-->
+
+<!--            <xpath expr="//field[@name='ref']" position="after">-->
+
+<!--                &lt;!&ndash; Status symbol: ● Sold / ✔ Ready / ◑ Pending / ◎ New &ndash;&gt;-->
+<!--                <field-->
+<!--                    name="lot_status"-->
+<!--                    string="Status"-->
+<!--                    readonly="1"-->
+<!--                />-->
+<!--                -->
+
+<!--                &lt;!&ndash; Sale Order name + state &ndash;&gt;-->
+<!--                <field-->
+<!--                    name="sale_order_ref"-->
+<!--                    string="Sale Order Reference"-->
+<!--                    readonly="1"-->
+<!--                />-->
+
+<!--            </xpath>-->
+<!--        </field>-->
+<!--    </record>-->
+
+<!--</odoo>-->
+
+
+
+
+
+
+
+
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--&lt;!&ndash;-->
+<!--    CORRECTED view inheritance using exact External IDs confirmed from Odoo debug screenshots:-->
+<!--      List view  →  stock.view_production_lot_tree   (ir.ui.view id 1220)-->
+<!--      Form view  →  stock.view_production_lot_form   (ir.ui.view id 1219)-->
+<!--&ndash;&gt;-->
+<!--<odoo>-->
+
+<!--    &lt;!&ndash; ================================================================-->
+<!--         1.  LIST VIEW  (stock.view_production_lot_tree)-->
+<!--         Architecture seen in screenshot:-->
+<!--           <list string="Lots/Serial Numbers" multi_edit="1">-->
+<!--               <field name="name"       decoration-bf="1"/>-->
+<!--               <field name="ref"        optional="show"/>-->
+<!--               <field name="product_id" readonly="1"/>          ← anchor-->
+<!--               <field name="create_date" optional="show"/>-->
+<!--               ...-->
+<!--           </list>-->
+
+<!--         We add two columns right after product_id:-->
+<!--           • is_ready       – boolean widget (✔ green / ✘ grey)-->
+<!--           • sale_order_ref – char with the SO name(s)-->
+<!--    ================================================================ &ndash;&gt;-->
+<!--    <record id="stock_lot_list_view_inherit_status" model="ir.ui.view">-->
+<!--        <field name="name">stock.production.lot.list.inherit.status</field>-->
+<!--        <field name="model">stock.lot</field>-->
+<!--        <field name="inherit_id" ref="stock.view_production_lot_tree"/>-->
+<!--        <field name="arch" type="xml">-->
+
+<!--            <xpath expr="//field[@name='product_id']" position="after">-->
+
+<!--                &lt;!&ndash; FIELD 1 ── Ready status icon-->
+<!--                     True  → green tick   ✔  (has custom_id, not sold)-->
+<!--                     False → grey cross   ✘  (already sold or not qualified) &ndash;&gt;-->
+<!--                <field-->
+<!--                    name="is_ready"-->
+<!--                    string="Ready"-->
+<!--                    widget="boolean"-->
+<!--                    readonly="1"-->
+<!--                    optional="show"-->
+<!--                />-->
+
+<!--                &lt;!&ndash; FIELD 2 ── Sale Order Reference-->
+<!--                     Shows the SO name(s) linked to this lot, e.g. S00011-->
+<!--                     Empty when the lot has never been sold &ndash;&gt;-->
+<!--                <field-->
+<!--                    name="sale_order_ref"-->
+<!--                    string="Sale Order Ref"-->
+<!--                    readonly="1"-->
+<!--                    optional="show"-->
+<!--                />-->
+
+<!--            </xpath>-->
+<!--        </field>-->
+<!--    </record>-->
+
+
+<!--    &lt;!&ndash; ================================================================-->
+<!--         2.  FORM VIEW  (stock.view_production_lot_form)-->
+<!--         Architecture seen in screenshot (relevant excerpt):-->
+<!--           <group name="main_group">-->
+<!--               <group>-->
+<!--                   <field name="product_id" .../>-->
+<!--                   ...-->
+<!--                   <field name="ref"/>                ← anchor-->
+<!--                   <field name="company_id" .../>-->
+<!--                   <field name="location_id" .../>-->
+<!--                   <field name="last_delivery_partner_id" .../>-->
+<!--               </group>-->
+<!--               <group/>-->
+<!--               <field name="lot_properties" .../>-->
+<!--           </group>-->
+
+<!--         We insert both new fields directly after "ref" so they sit-->
+<!--         naturally inside the left column of main_group.-->
+<!--    ================================================================ &ndash;&gt;-->
+<!--    <record id="stock_lot_form_view_inherit_status" model="ir.ui.view">-->
+<!--        <field name="name">stock.production.lot.form.inherit.status</field>-->
+<!--        <field name="model">stock.lot</field>-->
+<!--        <field name="inherit_id" ref="stock.view_production_lot_form"/>-->
+<!--        <field name="arch" type="xml">-->
+
+<!--            <xpath expr="//field[@name='ref']" position="after">-->
+
+<!--                &lt;!&ndash; FIELD 1 ── Ready to Use (boolean tick/cross) &ndash;&gt;-->
+<!--                <field-->
+<!--                    name="is_ready"-->
+<!--                    string="Ready to Use"-->
+<!--                    widget="boolean"-->
+<!--                    readonly="1"-->
+<!--                />-->
+
+<!--                &lt;!&ndash; FIELD 2 ── Sale Order Reference (char) &ndash;&gt;-->
+<!--                <field-->
+<!--                    name="sale_order_ref"-->
+<!--                    string="Sale Order Reference"-->
+<!--                    readonly="1"-->
+<!--                />-->
+
+<!--            </xpath>-->
+<!--        </field>-->
+<!--    </record>-->
+
+<!--</odoo>-->

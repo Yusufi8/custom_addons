@@ -4,11 +4,18 @@
     "depends": ["stock", "purchase", "sale", "mail"],
     "data": [
         "security/ir.model.access.csv",
+        "data/sequence.xml",
+        "views/inherit_stock.xml",
+        "views/inherit_stock_lot_views.xml",
+        "views/sale_page.xml",
+        "views/sale_res.xml",
         "views/inherit_stock_custom.xml",
         "views/inherit_product_template.xml",
         "views/inherit_sale_order.xml",
+        "views/sale_order_line_popup.xml",
         "views/inherit_purchase_order.xml",
     ],
     "installable": True,
+    "application": True,
     "sequence": -100,
 }

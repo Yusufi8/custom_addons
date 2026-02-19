@@ -1,13 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- NOTE: Removed the older popup record (view_sale_order_line_form_popup_customids)
+         and wired the order_line create control to use the new popup view
+         'car_custom_ids_module_FIXED.view_sale_order_line_popup_form' -->
+
     <record id="view_sale_order_form_inherit_customids" model="ir.ui.view">
         <field name="name">sale.order.form.inherit.customids</field>
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
+            <!-- force list+form mode so creation opens the form view, not inline editing -->
+            <xpath expr="//field[@name='order_line']" position="attributes">
+                <attribute name="mode">list,form</attribute>
+                <attribute name="widget" remove="1"/>
+            </xpath>
+
+            <!-- explicitly set the context so the form used for creation is our popup form -->
+            <xpath expr="//field[@name='order_line']" position="attributes">
+                <attribute name="context">{'form_view_ref': 'car_custom_ids_module_FIXED.view_sale_order_line_form_popup_customids'}</attribute>
+            </xpath>
+
+            <!-- ensure the list is not editable inline -->
+            <xpath expr="//field[@name='order_line']/list" position="attributes">
+                <attribute name="editable" remove="1"/>
+            </xpath>
+
+            <!-- show lot_ids column in the list view -->
             <xpath expr="//field[@name='order_line']/list" position="inside">
                 <field name="lot_ids"/>
             </xpath>
+
+            <!-- ensure Add product control opens our popup form (explicit) -->
+            <xpath expr="//field[@name='order_line']/list/control/create[@name='add_product_control']"
+                   position="attributes">
+                <attribute name="context">{'form_view_ref': 'car_custom_ids_module_FIXED.view_sale_order_line_form_popup_customids'}</attribute>
+            </xpath>
+
+<!--            &lt;!&ndash; include lot_ids in the order line form view (when opened from the popup context) &ndash;&gt;-->
+<!--            <xpath expr="//field[@name='order_line']/form//field[@name='product_uom_qty']" position="after">-->
+<!--                <field name="lot_ids"/>-->
+<!--            </xpath>-->
+
+            <!-- keep the custom ids tab on the sale order -->
             <xpath expr="//sheet/notebook" position="inside">
                 <page string="Custom IDs">
                     <field name="customids_ids" context="{'default_operation_type': 'so'}"/>

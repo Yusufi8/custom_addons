@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_order_form_lot_visible" model="ir.ui.view">
+        <field name="name">sale.order.form.product.lots</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook/page[@name='order_lines']" position="after">
+                <page name="product_lots" string="Product Lots">
+                    <field name="lot_visible_lines" nolabel="1">
+                        <list editable="bottom">
+                            <field name="product_id" readonly="1"/>
+                            <field name="product_uom_qty" readonly="1"/>
+                            <field name="lot_ids" widget="many2many_tags" readonly="1"/>
+                            <field name="price_unit" readonly="1"/>
+                            <field name="price_subtotal" readonly="1"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
